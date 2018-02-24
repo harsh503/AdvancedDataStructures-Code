@@ -15,11 +15,62 @@ int GetHeight(struct node *n)
     return n->h;
 }
 
+void printpre(struct node *n)
+{
+    if(n==NULL)
+        return;
+    printf("%d(%d) ",n->v,n->h);
+    printpre(n->l);
+    printpre(n->r);
+}
+
+void printin(struct node *n)
+{
+    if(n==NULL)
+        return;
+    printin(n->l);
+    printf("%d(%d) ",n->v,n->h);
+    printin(n->r);
+}
+
+void printpost(struct node *n)
+{
+    if(n==NULL)
+        return;
+    printpost(n->l);
+    printpost(n->r);
+    printf("%d(%d) ",n->v,n->h);
+}
+
 int GetBalance(struct node *n)
 {
     if(n==NULL)
         return 0;
     return ((GetHeight(n->l))-(GetHeight(n->r)));
+}
+
+int AVLBalance(struct node *root)
+{
+    if(root->l == NULL && root->r == NULL)
+    {
+        root->h = 1;
+        return 1;
+    }
+    else if(root->l == NULL)
+    {
+        root->h = 1 + AVLBalance(root->r);
+        return 1 + AVLBalance(root->r);
+    }
+    else if(root->r == NULL)
+    {
+        root->h = 1 + AVLBalance(root->l);
+        return 1 + AVLBalance(root->l);
+    }
+    else
+    {
+        root->h = 1 + max(AVLBalance(root->l),AVLBalance(root->r));
+        return 1 + max(AVLBalance(root->l),AVLBalance(root->r));
+    }
 }
 
 struct node * LeftRotate(struct node *x)
@@ -153,66 +204,205 @@ int getLargestChild(struct node *n)
     if(n->r==NULL)
         return n->v;
     return getLargestChild(n->r);
-
 }
 
-void mergeAVL(struct node *root, struct node *root2)
+int getSmallestChild(struct node *n)
 {
-    int t = getLargestChild(root);
-    cout<<"Val"<<t<<endl;
-    root = AVLDelete(root,t);
+    if(n->l==NULL)
+        return n->v;
+    return getSmallestChild(n->l);
+}
+
+struct node *RecurseLeft(struct node *n, int h)
+{
+    if(GetHeight(n) > h+1)
+        return RecurseLeft(n->l, h);
+    else 
+        return n;
+}
+
+struct node *RecurseRight(struct node *n, int h)
+{
+    if(GetHeight(n) > h+1)
+        return RecurseRight(n->r,h);
+    else    
+        return n;
+}
+
+struct node *GetParentLeftRecurse(struct node *n, struct node *nodeBreak, struct node *parent)
+{
+    if(parent==NULL && n==nodeBreak)
+    {
+        return NULL;
+    }
+    else if(n==nodeBreak)
+    {
+        return parent;
+    }
+    else
+    {
+        parent = n;
+        return GetParentLeftRecurse(n->l,nodeBreak, parent);
+    }    
+}
+
+struct node *GetParentRightRecurse(struct node *n, struct node *nodeBreak, struct node *parent)
+{
+    if(parent==NULL && n==nodeBreak)
+        return NULL;
+    else if(n==nodeBreak)
+        return parent;
+    else
+    {
+        parent = n;
+        return GetParentRightRecurse(n->r,nodeBreak, parent);
+    }
+}
+
+struct node * findBalanceNodeLeft(struct node *root, int ht, int rem, struct node *left)
+{
+    struct node *nodeBreak = RecurseLeft(root,ht);
+    struct node *parent = GetParentLeftRecurse(root, nodeBreak, NULL);
+    struct node *grandParent = GetParentLeftRecurse(root, parent, NULL);
+    
     struct node *temp = (struct node *)malloc(sizeof(struct node *));
-    temp->v = t;
-    temp->l = temp-> r = NULL;
-    mroot = temp;
-    mroot->l = root;
-    mroot->r = root2;
+    temp->v = rem;
+    temp->l = left;
+    temp->r = nodeBreak;
 
-    mroot->h = 1 + max(GetHeight(mroot->l),GetHeight(mroot->r));
-
-    int balance = GetBalance(mroot); 
- 
-    if (balance > 1 && key < node->left->key)
-        return rightRotate(node);
-    if (balance < -1 && key > node->right->key)
-        return leftRotate(node);
-    if (balance > 1 && key > node->left->key)
+    if(parent==NULL)
+        return temp;
+    else
     {
-        node->left =  leftRotate(node->left);
-        return rightRotate(node);
+        parent->l = temp;
+        parent->h = AVLBalance(parent);
+        if(grandParent==NULL)
+        {
+            int b = GetBalance(parent);
+            if(b>=-1 && b<=1)
+            {
+                return parent;
+            }
+            else
+            {
+                struct node *templ = (struct node *)malloc(sizeof(struct node *));
+                templ = parent->l->r->l;
+                struct node *tempr = (struct node *)malloc(sizeof(struct node *));
+                tempr = parent->l->r->r; 
+                root = parent->l->r;
+                root->l = parent->l;
+                root->r = parent; 
+                root->l->r = templ;
+                root->r->l = tempr;
+                return root;  
+            }
+        }
+        else
+        {
+            struct node *templ = (struct node *)malloc(sizeof(struct node *));
+            templ = parent->l->r->l;
+            struct node *tempr = (struct node *)malloc(sizeof(struct node *));
+            tempr = parent->l->r->r;
+            struct node *temp = (struct node *)malloc(sizeof(struct node *));
+            temp = parent->l->r;
+            temp->l = parent->l;
+            temp->r = parent;
+            temp->l->r = templ;
+            temp->r->l = tempr;
+            grandParent->l = temp;
+            return root;
+        }
     }
-    if (balance < -1 && key < node->right->key)
+}
+
+struct node * findBalanceNodeRight(struct node *root, int ht, int rem, struct node *right)
+{
+    struct node *nodeBreak = RecurseRight(root,ht);
+    struct node *parent = GetParentRightRecurse(root, nodeBreak, NULL);
+    struct node *grandParent = GetParentRightRecurse(root, parent, NULL);
+
+    struct node *temp = (struct node *)malloc(sizeof(struct node *));
+    temp->v = rem;
+    temp->r = right;
+    temp->l = nodeBreak;
+
+    if(parent==NULL)
+        return temp;
+    else
     {
-        node->right = rightRotate(node->right);
-        return leftRotate(node);
+        parent->r = temp;
+        parent->h = AVLBalance(parent);
+        if(grandParent==NULL)
+        {
+            int b = GetBalance(parent);
+            if(b>=-1 && b<=1)
+            {
+                return parent;
+            }
+            else
+            {
+                cout<<"baka"<<endl;
+                struct node *templ = (struct node *)malloc(sizeof(struct node *));
+                templ = parent->r->l->l;
+                struct node *tempr = (struct node *)malloc(sizeof(struct node *));
+                tempr = parent->r->l->r; 
+                root = parent->r->l;
+                root->r = parent->r;
+                root->l = parent; 
+                root->l->r = templ;
+                root->r->l = tempr;
+                return root;  
+            }
+        }
+        else
+        {
+            struct node *templ = (struct node *)malloc(sizeof(struct node *));
+            templ = parent->r->l->l;
+            struct node *tempr = (struct node *)malloc(sizeof(struct node *));
+            tempr = parent->r->l->r;
+            struct node *temp = (struct node *)malloc(sizeof(struct node *));
+            temp = parent->r->l;
+            temp->r = parent->r;
+            temp->l = parent;
+            temp->l->r = templ;
+            temp->r->l = tempr;
+            grandParent->r = temp;
+            return root;
+        }
     }
 }
 
-void printpre(struct node *n)
+void mergeAVL(struct node *root1, struct node *root2)
 {
-    if(n==NULL)
-        return;
-    printf("%d(%d) ",n->v,n->h);
-    printpre(n->l);
-    printpre(n->r);
-}
+    int h1 = GetHeight(root1);
+    int h2 = GetHeight(root2);
+    if(h2>=h1)
+    {
+        int rem = getLargestChild(root1);
+        root1 = AVLDelete(root1,rem);
+        int lHeight = GetHeight(root1);
+        mroot = findBalanceNodeLeft(root2,lHeight,rem,root1);
+        mroot->h = AVLBalance(mroot);
+        cout<<endl<<"in ";
+        printin(mroot);
+        cout<<endl<<"pre ";
+        printpre(mroot);
+        cout<<endl;
+    }   
+    else
+    {
+        int rem = getSmallestChild(root2);
+        root2 = AVLDelete(root2,rem);
+        int rHeight = GetHeight(root2);
+        mroot = findBalanceNodeRight(root1,rHeight,rem,root2);
+        mroot->h = AVLBalance(mroot);
+        cout<<endl<<"in ";
+        printin(mroot);
+        cout<<endl<<"pre ";
+        printpre(mroot);
+        cout<<endl;
+    } 
 
-void printin(struct node *n)
-{
-    if(n==NULL)
-        return;
-    printin(n->l);
-    printf("%d(%d) ",n->v,n->h);
-    printin(n->r);
-}
-
-void printpost(struct node *n)
-{
-    if(n==NULL)
-        return;
-    printpost(n->l);
-    printpost(n->r);
-    printf("%d(%d) ",n->v,n->h);
 }
 
 int main()
@@ -285,7 +475,7 @@ int main()
         else if(n==3)
         {
             printf("Enter value to be searched\n");
-            cin>>v;
+            //cin>>v;
             //search(root,v);
         }
         else if(n==4)
@@ -310,8 +500,5 @@ int main()
     }
 
     mergeAVL(root,root2);
-    printin(mroot);
-    cout<<endl;
-    printpre(mroot);
     return 0;
 }
