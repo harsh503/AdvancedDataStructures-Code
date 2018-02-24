@@ -2,6 +2,8 @@
 
 using namespace std;
 
+int flag=0;
+
 struct node 
 {
     int v,h;
@@ -341,7 +343,6 @@ struct node * findBalanceNodeRight(struct node *root, int ht, int rem, struct no
             }
             else
             {
-                cout<<"baka"<<endl;
                 struct node *templ = (struct node *)malloc(sizeof(struct node *));
                 templ = parent->r->l->l;
                 struct node *tempr = (struct node *)malloc(sizeof(struct node *));
@@ -376,6 +377,35 @@ void mergeAVL(struct node *root1, struct node *root2)
 {
     int h1 = GetHeight(root1);
     int h2 = GetHeight(root2);
+
+    if(h1==0 && h2==0)
+    {
+        cout<<"\nNo input to process\n";
+        return;
+    }
+    else if(h1==0)
+    {
+        mroot = root2;
+        cout<<"\n\nThe MERGED AVL Tree is as follows : ";
+        cout<<endl<<"Inorder Traversal - ";
+        printin(mroot);
+        cout<<endl<<"Preorder Traversal - ";
+        printpre(mroot);
+        cout<<endl;
+        return;
+    }
+    else if(h2==0)
+    {
+        mroot = root1;
+        cout<<"\n\nThe MERGED AVL Tree is as follows : ";
+        cout<<endl<<"Inorder Traversal - ";
+        printin(mroot);
+        cout<<endl<<"Preorder Traversal - ";
+        printpre(mroot);
+        cout<<endl;
+        return;
+    }
+
     if(h2>=h1)
     {
         int rem = getLargestChild(root1);
@@ -383,9 +413,10 @@ void mergeAVL(struct node *root1, struct node *root2)
         int lHeight = GetHeight(root1);
         mroot = findBalanceNodeLeft(root2,lHeight,rem,root1);
         mroot->h = AVLBalance(mroot);
-        cout<<endl<<"in ";
+        cout<<"\n\nThe MERGED AVL Tree is as follows : ";
+        cout<<endl<<"Inorder Traversal - ";
         printin(mroot);
-        cout<<endl<<"pre ";
+        cout<<endl<<"Preorder Traversal - ";
         printpre(mroot);
         cout<<endl;
     }   
@@ -396,12 +427,29 @@ void mergeAVL(struct node *root1, struct node *root2)
         int rHeight = GetHeight(root2);
         mroot = findBalanceNodeRight(root1,rHeight,rem,root2);
         mroot->h = AVLBalance(mroot);
-        cout<<endl<<"in ";
+        cout<<"\n\nThe MERGED AVL Tree is as follows : ";
+        cout<<endl<<"Inorder Traversal - ";
         printin(mroot);
-        cout<<endl<<"pre ";
+        cout<<endl<<"Preorder Traversal - ";
         printpre(mroot);
         cout<<endl;
     } 
+
+}
+
+void search(struct node *root, int v)
+{
+    if(root==NULL)
+        return;
+    if(root->v==v)
+    {
+        flag=1;
+        return;
+    }
+    else if(v<root->v)
+        return search(root->l,v);
+    else    
+        return search(root->r,v);
 
 }
 
@@ -430,7 +478,12 @@ int main()
         {
             printf("Enter value to be searched\n");
             cin>>v;
-            //search(root,v);
+            flag=0;
+            search(root,v);
+            if(flag==0)
+                printf("Value %d not found\n",v);
+            else    
+                printf("Value %d found\n",v);
         }
         else if(n==4)
         {
@@ -468,15 +521,20 @@ int main()
         }
         else if(n==2)
         {
-            //printf("Enter value to delete\n");
-            //cin>>v;
-            //root = AVLDelete(root,v);
+            printf("Enter value to delete\n");
+            cin>>v;
+            root2 = AVLDelete(root2,v);
         }
         else if(n==3)
         {
             printf("Enter value to be searched\n");
-            //cin>>v;
-            //search(root,v);
+            cin>>v;
+            flag=0;
+            search(root,v);
+            if(flag==0)
+                printf("Value %d not found\n",v);
+            else    
+                printf("Value %d found\n",v);
         }
         else if(n==4)
         {
